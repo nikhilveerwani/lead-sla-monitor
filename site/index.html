@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lead SLA Monitor · Demo</title>
+<meta name="description" content="Every lead called within 24 hours: SLA by team and rep, a call-now list and a Slack digest. A demo with synthetic data, built by Nikhil Veerwani.">
+<meta property="og:title" content="Lead SLA Monitor · Demo">
+<meta property="og:description" content="Every lead called within 24 hours: SLA by team and rep, a call-now list and a Slack digest 3x a day. Synthetic data.">
+<meta property="og:image" content="https://nikhilveerwani.github.io/lead-sla-monitor/preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231F3864'/%3E%3Ccircle cx='32' cy='34' r='17' stroke='%23fff' stroke-width='5' fill='none'/%3E%3Cpath d='M32 24v11l7 5' stroke='%23fff' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F4F5F2; --sheet:#FFFFFF; --ink:#13201B; --ink-2:#4A5650; --ink-3:#7A847F; --line:#DFE3DE;
+  --accent:#2F4BD8; --amber:#B7791F; --amber-soft:#FBF1DD; --good:#2B8A3E; --bad:#C92A2A; --warn:#D9480F;
+  --good-soft:#E6F4EA; --bad-soft:#FDECEC;
+  --f-display:"Bricolage Grotesque",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0F1513; --sheet:#161E1B; --ink:#E8ECEA; --ink-2:#B3BCB7; --ink-3:#86908B; --line:#2A3430;
+  --accent:#8DA2FF; --amber:#E9B44C; --amber-soft:#2E2412; --good:#69DB7C; --bad:#FF8787; --warn:#FFA94D;
+  --good-soft:#163221; --bad-soft:#3A1A1A;
+}}
+:root[data-theme="dark"]{
+  --paper:#0F1513; --sheet:#161E1B; --ink:#E8ECEA; --ink-2:#B3BCB7; --ink-3:#86908B; --line:#2A3430;
+  --accent:#8DA2FF; --amber:#E9B44C; --amber-soft:#2E2412; --good:#69DB7C; --bad:#FF8787; --warn:#FFA94D;
+  --good-soft:#163221; --bad-soft:#3A1A1A;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+a{color:var(--accent)}
+.demo{background:var(--amber-soft);border-bottom:1px solid color-mix(in srgb,var(--amber) 40%,transparent);font-size:13.5px}
+.demo .wrap{display:flex;gap:10px;align-items:center;padding-top:9px;padding-bottom:9px}
+.demo b{color:var(--amber);font-family:var(--f-mono);font-weight:500;font-size:12px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:4px;padding:1px 6px;flex:none}
+header.top{padding:40px 0 22px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,4.6vw,48px);line-height:1.05;letter-spacing:-.02em;margin:8px 0 10px}
+.lede{color:var(--ink-2);max-width:70ch;margin:0}
+.meta{margin-top:14px;font-family:var(--f-mono);font-size:12.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:6px 18px}
+.controls{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;padding:14px 0 18px;border-top:1px solid var(--line)}
+.ctl{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--sheet)}
+.seg button{font:500 13px var(--f-body);border:0;background:transparent;color:var(--ink-2);padding:7px 14px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.range{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-3)}
+.kpis{display:grid;grid-template-columns:1.3fr repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi small{display:block;font-size:12px;color:var(--ink-3);line-height:1.3}
+.kpi b{display:block;font-family:var(--f-display);font-weight:800;font-size:28px;line-height:1.1;margin-top:8px}
+.kpi span{font-size:12px;color:var(--ink-3)}
+.kpi.hero b{font-size:40px}
+.kpi.alert{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:var(--bad-soft)}
+.kpi.alert b{color:var(--bad)}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px;margin-bottom:18px}
+.card h2{font-family:var(--f-display);font-weight:600;font-size:20px;margin:0 0 4px}
+.card .sub{color:var(--ink-3);font-size:13px;margin:0 0 12px}
+.insight{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb,var(--accent) 8%,var(--sheet));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.insight b{color:var(--accent)}
+.chart{position:relative;height:280px}
+.chart.short{height:240px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid2 > .card{margin-bottom:18px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--ink-3);font-size:12px}
+th:first-child,td:first-child{text-align:left}
+td.num{font-family:var(--f-mono);font-size:12.5px}
+tfoot td{font-weight:600;border-top:2px solid var(--line)}
+.slabar{display:inline-block;width:70px;height:7px;border-radius:4px;background:var(--line);vertical-align:middle;margin-left:8px;position:relative;overflow:hidden}
+.slabar i{position:absolute;inset:0 auto 0 0;border-radius:4px}
+.tag{font-size:11.5px;border-radius:999px;padding:2px 8px;font-weight:500}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tag.warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn)}
+.list td,.list th{text-align:left}
+.list td.num{text-align:right}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{font:500 13px var(--f-body);border:1px solid var(--line);background:transparent;color:var(--ink-2);border-radius:999px;padding:5px 12px;cursor:pointer}
+.tabs button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.scroll{max-height:360px;overflow:auto}
+.slack{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--paper);font-size:14px}
+.slack .who{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.slack .av{width:34px;height:34px;border-radius:8px;background:#1F3864;color:#fff;display:grid;place-items:center;font:700 13px var(--f-body)}
+.slack .who b{font-size:14.5px}.slack .who span{font-size:12px;color:var(--ink-3);margin-left:6px}
+.slack pre{font:12px/1.45 var(--f-mono);background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:8px 10px;overflow-x:auto;margin:4px 0 10px}
+.slack p{margin:4px 0}
+.how{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}
+.how ol{margin:0;padding-left:18px;color:var(--ink-2)}
+.how li{margin-bottom:7px}
+.flow{width:100%;height:auto;display:block;margin:6px 0 10px}
+.flow rect{fill:var(--paper);stroke:var(--line)}
+.flow .hi{fill:color-mix(in srgb,var(--accent) 10%,var(--sheet));stroke:var(--accent)}
+.flow text{fill:var(--ink);font:500 12px var(--f-body)}
+.flow .s{fill:var(--ink-3);font:400 10.5px var(--f-mono)}
+.flow path{stroke:var(--ink-3);fill:none;stroke-width:1.4;marker-end:url(#arr)}
+.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.checks div{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.checks b{display:block;font-family:var(--f-mono);font-size:18px}
+.checks span{font-size:12px;color:var(--ink-3)}
+footer{color:var(--ink-3);font-size:13px;padding:22px 0 40px;display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between}
+@media (max-width:980px){.kpis{grid-template-columns:repeat(3,1fr)}.grid2,.how{grid-template-columns:1fr}}
+@media (max-width:560px){.wrap{padding:0 16px}.kpis{grid-template-columns:repeat(2,1fr)}.kpi b{font-size:24px}.kpi.hero b{font-size:32px}}
+</style>
+</head>
+<body>
+
+<div class="demo" role="note"><div class="wrap"><b>Demo</b><span>Built on <strong>synthetic data</strong>. I run the production version on company data I can't share, so every lead, rep and number here is made up.</span></div></div>
+
+<header class="top"><div class="wrap">
+  <div class="eyebrow">Sales operations · lead response SLA</div>
+  <h1>Every lead called within 24 hours</h1>
+  <p class="lede">Speed to first call is the cheapest conversion lever a sales team has. This monitor checks every lead against a 24-hour first-call SLA, shows which teams and reps are slipping, lists the leads to call right now, and posts a digest to Slack three times a day.</p>
+  <div class="meta"><span id="m-refreshed"></span><span id="m-rows"></span></div>
+</div></header>
+
+<main class="wrap">
+  <div class="controls">
+    <div class="ctl">Period
+      <div class="seg" id="f-period"><button data-v="D-1" aria-pressed="false">Yesterday</button><button data-v="WTD" aria-pressed="false">Week to date</button><button data-v="MTD" aria-pressed="true">Month to date</button></div>
+    </div>
+    <span class="range" id="range"></span>
+  </div>
+
+  <section class="kpis" id="kpis" aria-label="Key metrics"></section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>By team</h2>
+      <p class="sub">Leads grouped on the day they were created. Running = still inside their 24 hours, so not counted in SLA % yet.</p>
+      <div class="tablewrap"><table id="t-team"><thead><tr><th>Team</th><th>Leads</th><th>On time</th><th>Late</th><th>Missed</th><th>Running</th><th>SLA</th></tr></thead><tbody></tbody><tfoot></tfoot></table></div>
+    </section>
+    <section class="card">
+      <h2>By rep</h2>
+      <p class="sub">Lowest SLA first: who needs help, not who to blame.</p>
+      <div class="tablewrap scroll" style="max-height:290px"><table id="t-rep"><thead><tr><th>Rep</th><th>Team</th><th>Leads</th><th>Breached</th><th>SLA</th></tr></thead><tbody></tbody></table></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Daily SLA, last 30 days</h2>
+    <p class="sub">Share of each day's leads called within 24 hours. Saturdays are highlighted.</p>
+    <div class="insight" id="insight"></div>
+    <div class="chart"><canvas id="c-trend" aria-label="Daily SLA percent"></canvas></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Time to first call</h2>
+      <p class="sub">Last 30 complete days. Median <b id="median"></b>.</p>
+      <div class="chart short"><canvas id="c-dist" aria-label="Time to first call distribution"></canvas></div>
+    </section>
+    <section class="card">
+      <h2>Why leads were missed</h2>
+      <p class="sub">Reasons the team logged against this month's breaches, in the sheet's Reason column.</p>
+      <div class="chart short"><canvas id="c-reason" aria-label="Breach reasons"></canvas></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Call these now</h2>
+    <p class="sub">The list the digest links to. Overdue = past 24 hours and still not called (last 7 days). At risk = will breach in the next 6 hours.</p>
+    <div class="tabs" id="tabs"><button data-v="overdue" aria-pressed="true"></button><button data-v="at_risk" aria-pressed="false"></button></div>
+    <div class="tablewrap scroll"><table class="list" id="t-list"><thead><tr><th>Lead</th><th>Created</th><th>Owner</th><th>Team</th><th>Source</th><th style="text-align:right">Status</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2>What lands in Slack</h2>
+    <p class="sub">Generated by the same code as this page, and posted at 10:00, 14:00 and 19:00, Monday to Saturday.</p>
+    <div class="slack" id="slack"></div>
+  </section>
+
+  <section class="card how">
+    <div>
+      <h2>How it's built</h2>
+      <svg class="flow" viewBox="0 0 616 160" role="img" aria-label="Pipeline: Google Sheet with leads and calls, then the shared SLA core, then a Slack digest and a breached-leads tab, triggered three times a day">
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-3);stroke:none"/></marker></defs>
+        <rect x="2" y="44" width="140" height="62" rx="8"/><text x="14" y="68">Leads + Calls</text><text class="s" x="14" y="86">CRM export or</text><text class="s" x="14" y="99">warehouse query</text>
+        <rect class="hi" x="170" y="44" width="140" height="62" rx="8"/><text x="182" y="68">sla_core.js</text><text class="s" x="182" y="86">one set of rules</text><text class="s" x="182" y="99">Apps Script + Node</text>
+        <rect x="338" y="10" width="136" height="54" rx="8"/><text x="350" y="32">Slack digest</text><text class="s" x="350" y="50">3× a day, Mon–Sat</text>
+        <rect x="338" y="86" width="136" height="54" rx="8"/><text x="350" y="108">Breached tab</text><text class="s" x="350" y="126">Reason dropdown</text>
+        <rect x="500" y="44" width="114" height="62" rx="8"/><text x="512" y="68">This page</text><text class="s" x="512" y="86">demo build</text><text class="s" x="512" y="99">GitHub Actions</text>
+        <path d="M142 75 H166"/><path d="M310 70 C324 70 324 37 334 37"/><path d="M310 80 C324 80 324 113 334 113"/><path d="M474 37 C488 37 486 70 496 70"/>
+      </svg>
+      <ol>
+        <li><b>The SLA is the first call attempt within 24 clock hours</b> of the lead being created. Attempts count, not only connects: the SLA measures speed, and connect rate is a separate metric.</li>
+        <li><b>Calls logged before the lead was created are ignored.</b> They belong to an earlier registration of the same person and would make a missed lead look on time.</li>
+        <li><b>Leads still inside their window are "Running"</b> and stay out of SLA %, so yesterday's number isn't dragged down by leads that still have time.</li>
+        <li><b>Periods follow the lead's creation date</b> in IST: yesterday, Monday to yesterday, and the 1st to yesterday.</li>
+        <li><b>Reasons survive the refresh.</b> The breached tab is rebuilt every run, but the team's Reason and Comment entries are stored by lead ID and written back.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Data checks</h2>
+      <p class="sub">Shown on every run, so a sudden jump is explained before anyone asks.</p>
+      <div class="checks" id="checks"></div>
+      <p class="sub" style="margin-top:14px">Code, tests and the Google Sheets template: <a href="https://github.com/nikhilveerwani/lead-sla-monitor">github.com/nikhilveerwani/lead-sla-monitor</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>Built by <a href="https://nikhilveerwani.github.io/">Nikhil Veerwani</a> · analytics, BI &amp; growth</span>
+  <span>Synthetic data · no company data or code</span>
+</footer>
+
+<script src="data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+  var D = window.SLA_DATA, css = getComputedStyle(document.documentElement);
+  var v = function(n){ return css.getPropertyValue(n).trim(); };
+  Chart.defaults.font.family = '"IBM Plex Sans", system-ui, sans-serif';
+  var state = { period:'MTD', list:'overdue' }, charts = {};
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var dshort = function(d){ var p = d.split('-'); return +p[2] + ' ' + MON[+p[1]-1]; };
+  var fmt = function(n){ return n == null ? '–' : Math.round(n).toLocaleString('en-IN'); };
+  var pct = function(n){ return n == null ? '–' : n.toFixed(1) + '%'; };
+  var ist = function(ms){ var d = new Date(ms + 330*60000); return d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ', ' + String(d.getUTCHours()).padStart(2,'0') + ':' + String(d.getUTCMinutes()).padStart(2,'0'); };
+  var slaColor = function(p){ return p == null ? v('--line') : p >= 95 ? v('--good') : p >= 88 ? v('--warn') : v('--bad'); };
+  var esc = function(s){ return String(s).replace(/[&<>]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]; }); };
+
+  document.getElementById('m-refreshed').textContent = 'Refreshed ' + D.generated_at;
+  document.getElementById('m-rows').textContent = D.checks.leads.toLocaleString('en-IN') + ' leads · ' + D.checks.calls.toLocaleString('en-IN') + ' calls checked';
+  document.getElementById('median').textContent = D.median_hours == null ? '–' : D.median_hours.toFixed(1) + ' hours';
+
+  function base(){
+    return { responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:v('--ink'), titleColor:v('--paper'), bodyColor:v('--paper'), bodyFont:{ family:'IBM Plex Mono', size:12 } } },
+      scales:{ x:{ ticks:{ color:v('--ink-3'), font:{ size:11 } }, grid:{ display:false } },
+               y:{ ticks:{ color:v('--ink-3'), font:{ family:'IBM Plex Mono', size:11 } }, grid:{ color:v('--line') }, beginAtZero:true } } };
+  }
+
+  function renderPeriod(){
+    var P = D.periods[state.period], t = P.total || { leads:0, on_time:0, late:0, not_called:0, running:0, sla_pct:null };
+    var r = P.range;
+    document.getElementById('range').textContent = r.from === r.to ? dshort(r.from) : dshort(r.from) + ' – ' + dshort(r.to);
+    var k = [
+      ['hero', 'First-call SLA', pct(t.sla_pct), t.on_time + ' of ' + (t.on_time + t.late + t.not_called) + ' leads on time'],
+      ['', 'Leads', fmt(t.leads), 'created in the period'],
+      ['', 'Called late', fmt(t.late), 'first call after 24h'],
+      ['', 'Never called', fmt(t.not_called), 'past 24h, no attempt'],
+      ['', 'Running', fmt(t.running), 'still inside 24h'],
+      ['alert', 'Overdue right now', fmt(D.action.overdue_total), 'last 7 days, not called']
+    ];
+    document.getElementById('kpis').innerHTML = k.map(function(x){ return '<div class="kpi '+x[0]+'"><small>'+x[1]+'</small><b>'+x[2]+'</b><span>'+x[3]+'</span></div>'; }).join('');
+    document.querySelector('.kpi.hero b').style.color = slaColor(t.sla_pct);
+
+    var row = function(g){ return '<td class="num">'+fmt(g.leads)+'</td><td class="num">'+fmt(g.on_time)+'</td><td class="num">'+fmt(g.late)+'</td><td class="num">'+fmt(g.not_called)+'</td><td class="num">'+fmt(g.running)+'</td>'+
+      '<td class="num">'+pct(g.sla_pct)+'<span class="slabar"><i style="width:'+(g.sla_pct||0)+'%;background:'+slaColor(g.sla_pct)+'"></i></span></td>'; };
+    document.querySelector('#t-team tbody').innerHTML = P.teams.map(function(g){ return '<tr><td>'+g.key+'</td>'+row(g)+'</tr>'; }).join('');
+    document.querySelector('#t-team tfoot').innerHTML = P.total ? '<tr><td>Total</td>'+row(P.total)+'</tr>' : '';
+    var reps = P.reps.slice().sort(function(a,b){ return (a.sla_pct==null?101:a.sla_pct) - (b.sla_pct==null?101:b.sla_pct); });
+    document.querySelector('#t-rep tbody').innerHTML = reps.map(function(g){
+      return '<tr><td>'+g.key+'</td><td>'+(D.repTeam[g.key]||'')+'</td><td class="num">'+fmt(g.leads)+'</td><td class="num">'+fmt(g.breached)+'</td><td class="num">'+pct(g.sla_pct)+'<span class="slabar"><i style="width:'+(g.sla_pct||0)+'%;background:'+slaColor(g.sla_pct)+'"></i></span></td></tr>';
+    }).join('');
+  }
+
+  function renderTrend(){
+    var days = D.daily, sat = function(d){ return new Date(d.date + 'T00:00:00Z').getUTCDay() === 6; };
+    var colors = days.map(function(d){ return sat(d) ? v('--bad') : v('--accent'); });
+    var o = base(); o.scales.y.max = 100; o.scales.y.min = Math.max(0, Math.floor(Math.min.apply(null, days.map(function(d){ return d.sla_pct || 100; })) / 10) * 10 - 10);
+    o.scales.y.ticks.callback = function(x){ return x + '%'; };
+    o.plugins.tooltip.callbacks = { title:function(it){ var d = days[it[0].dataIndex]; return dshort(d.date) + (sat(d) ? ' (Saturday)' : ''); },
+      label:function(c){ var d = days[c.dataIndex]; return 'SLA ' + pct(d.sla_pct) + ' · ' + d.breached + ' of ' + d.leads + ' breached'; } };
+    if (charts.trend) charts.trend.destroy();
+    charts.trend = new Chart(document.getElementById('c-trend'), { type:'bar', data:{ labels: days.map(function(d){ return dshort(d.date); }),
+      datasets:[{ data: days.map(function(d){ return d.sla_pct; }), backgroundColor: colors, borderRadius: 3 }] }, options:o });
+
+    var avg = function(a){ return a.length ? a.reduce(function(s,x){ return s + x; }, 0) / a.length : null; };
+    var s = avg(days.filter(sat).map(function(d){ return d.sla_pct; })), w = avg(days.filter(function(d){ var g = new Date(d.date + 'T00:00:00Z').getUTCDay(); return g >= 1 && g <= 4; }).map(function(d){ return d.sla_pct; }));
+    document.getElementById('insight').innerHTML = s != null && w != null && w - s > 5
+      ? '<span>💡</span><span><b>Saturday leads average ' + s.toFixed(0) + '% vs ' + w.toFixed(0) + '% Monday–Thursday.</b> Nobody calls on Sunday, so a lead created on Saturday afternoon is past 24 hours by Monday morning. Fix: a short Sunday shift, or a Saturday-evening calling block.</span>'
+      : '<span>💡</span><span>No day of the week stands out in this window.</span>';
+  }
+
+  function renderDist(){
+    var o = base(); o.plugins.tooltip.callbacks = { label:function(c){ return fmt(c.parsed.y) + ' leads'; } };
+    if (charts.dist) charts.dist.destroy();
+    charts.dist = new Chart(document.getElementById('c-dist'), { type:'bar', data:{ labels: D.dist.map(function(b){ return b.label; }),
+      datasets:[{ data: D.dist.map(function(b){ return b.n; }), backgroundColor: D.dist.map(function(b, i){ return i < 4 ? v('--accent') : i < 6 ? v('--warn') : v('--bad'); }), borderRadius: 3 }] }, options:o });
+  }
+
+  function renderReasons(){
+    var o = base(); o.indexAxis = 'y'; o.scales.x.grid = { color:v('--line') }; o.scales.y.grid = { display:false };
+    o.scales.y.ticks.font = { size:11.5 };
+    if (charts.reason) charts.reason.destroy();
+    charts.reason = new Chart(document.getElementById('c-reason'), { type:'bar', data:{ labels: D.reasons.map(function(r){ return r[0]; }),
+      datasets:[{ data: D.reasons.map(function(r){ return r[1]; }), backgroundColor: D.reasons.map(function(r){ return r[0] === 'No reason logged' ? v('--line') : v('--accent'); }), borderRadius: 3 }] }, options:o });
+  }
+
+  function renderList(){
+    var tabs = document.querySelectorAll('#tabs button');
+    tabs[0].textContent = 'Overdue (' + D.action.overdue_total + ')'; tabs[1].textContent = 'At risk (' + D.action.at_risk_total + ')';
+    var rows = D.action[state.list];
+    document.querySelector('#t-list tbody').innerHTML = rows.length ? rows.map(function(r){
+      var h = (D.now - r.created) / 3600000, left = (r.deadline - D.now) / 3600000;
+      var status = state.list === 'overdue' ? '<span class="tag bad">' + Math.round(h) + 'h old</span>' : '<span class="tag warn">' + Math.max(0, left).toFixed(1) + 'h left</span>';
+      return '<tr><td class="num" style="text-align:left">'+r.id+'</td><td>'+ist(r.created)+'</td><td>'+r.owner+'</td><td>'+r.team+'</td><td>'+r.source+'</td><td style="text-align:right">'+status+'</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="color:var(--ink-3)">Nothing here right now.</td></tr>';
+  }
+
+  function renderSlack(){
+    var html = esc(D.slack)
+      .replace(/```([\s\S]*?)```/g, function(_, x){ return '<pre>' + x + '</pre>'; })
+      .replace(/\*([^*\n]+)\*/g, '<b>$1</b>')
+      .replace(/:rotating_light:/g, '🚨')
+      .replace(/&lt;(https?:[^|]+)\|([^&]+)&gt;/g, '<a href="#call-now">$2</a>');
+    var parts = html.split(/(<pre>[\s\S]*?<\/pre>)/).map(function(p){ return p.indexOf('<pre>') === 0 ? p : p.split('\n').filter(function(l){ return l.trim(); }).map(function(l){ return '<p>' + l + '</p>'; }).join(''); }).join('');
+    document.getElementById('slack').innerHTML = '<div class="who"><div class="av">SLA</div><div><b>Lead SLA bot</b><span>APP · ' + D.generated_at.slice(11) + '</span></div></div>' + parts;
+  }
+
+  function renderChecks(){
+    var c = D.checks;
+    var items = [[c.leads,'leads checked (45 days)'],[c.calls,'call attempts matched'],[c.ignored_pre_creation,'calls ignored: logged before the lead existed'],[c.running,'leads still inside 24h right now']];
+    document.getElementById('checks').innerHTML = items.map(function(x){ return '<div><b>'+x[0].toLocaleString('en-IN')+'</b><span>'+x[1]+'</span></div>'; }).join('');
+  }
+
+  D.repTeam = D.rep_team || {};
+
+  document.getElementById('f-period').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    this.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', x === b); });
+    state.period = b.dataset.v; renderPeriod();
+  });
+  document.getElementById('tabs').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    this.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', x === b); });
+    state.list = b.dataset.v; renderList();
+  });
+  document.querySelector('#t-list').closest('.card').id = 'call-now';
+
+  function all(){ renderPeriod(); renderTrend(); renderDist(); renderReasons(); renderList(); renderSlack(); renderChecks(); }
+  all();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ renderTrend(); renderDist(); renderReasons(); });
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ css = getComputedStyle(document.documentElement); all(); });
+})();
+</script>
+</body>
+</html>
