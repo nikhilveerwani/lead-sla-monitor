@@ -14,6 +14,15 @@
 
 > **Demo with synthetic data.** I built and run the production version of this alert for a sales team, on company data I can't share. This repo is a clean-room rebuild: fresh code, made-up leads and reps, the same rules. It also includes a **Google Sheets template you can use on your own data**.
 
+## Executive summary
+
+- **The biggest gap is the calendar, not the reps.** Saturday leads are called on time about 55% of the time against 95% Monday to Thursday (a 40-point gap, 95% CI 36–45, p < 0.001), because nobody calls on Sunday.
+- **Only one rep is significantly below average.** Everyone else's difference is within normal variation, so the monitor doesn't flag them.
+- **Late calls outnumber missed ones**, about two to one. Each needs a different fix.
+- **Recommendation:** a 4-hour Sunday calling block (about 200 leads a month rescued at the weekday rate), coaching for the one outlier, and fixes for the two system causes behind "misses". Full reasoning in the **[decision memo](docs/decision_memo.md)**.
+
+*The live page recomputes this summary three times a day.*
+
 ## The problem
 
 Speed to first call is the cheapest conversion lever a sales team has, and it decays quietly. Nobody notices a lead that was never called. The team sees "calls made", not "leads missed". A weekly report arrives too late to save any of them.
@@ -45,6 +54,23 @@ The team needed three things:
 ## What the demo surfaces
 
 The made-up data is shaped like the real problem, so the report has something to find. For example, **Saturday leads land around 50% SLA against 95% on weekdays**. Nobody calls on Sunday, so a lead created on Saturday afternoon is past 24 hours by Monday morning. The page detects this automatically and suggests the fix.
+
+## Statistical checks
+
+- **Saturday vs weekdays:** a two-proportion z-test with a 95% interval on the difference, over the last 30 complete days.
+- **Reps:** each rep gets a 95% Wilson interval on their on-time rate. A rep is flagged only if even the *upper* end is below the team average. With about 200 leads a month each, that keeps normal variation from turning into a performance conversation.
+
+## Limitations, and what I'd do next
+
+- **An attempt isn't a conversation.** Next: a second SLA on the first *connected* call, reported alongside.
+- **24 clock hours ignores the calendar, deliberately.** It's what the lead experiences, so Saturday misses are a staffing fix, not a metric fix.
+- **Unlogged calls look like misses.** Next: match calls on phone number as well as lead ID.
+- **Rep comparisons need volume.** Only large gaps are significant at this size, by design.
+
+## Documents
+
+- **[Decision memo](docs/decision_memo.md):** the decision, evidence, options, recommendation, and what would change it
+- **[Data dictionary](docs/data_dictionary.md):** inputs, statuses, periods, metrics and statistical rules
 
 ## Run it locally
 
